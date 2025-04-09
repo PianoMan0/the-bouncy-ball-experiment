@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bouncy Ball Experiment</title>
+    <style id="webmakerstyle">
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+
+        #gameArea {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #87ceeb;
+            overflow: hidden;
+        }
+
+        #ball {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* Start as a circle */
+            background-color: #ff5733;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10; /* Ensure controls are above the game area */
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #stats {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            z-index: 10;
+            visibility: hidden; /* Hidden by default */
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="increaseSpeed">Increase Speed</button>
+        <button id="decreaseSpeed">Decrease Speed</button>
+        <button id="changeColor">Change Ball Color</button> 
+        <button id="changeShape">Square Mode</button> 
+					<button id="statsButton">Stats for Nerds</button>
+    </div>
+    <div id="gameArea">
+        <div id="ball"></div>
+    </div>
+    <div id="stats">Hits Last Second: <span id="hitsPerMinute">0</span></div>
+    <script>
+        const ball = document.getElementById("ball");
+        const gameArea = document.getElementById("gameArea");
+        const increaseSpeedButton = document.getElementById("increaseSpeed");
+        const decreaseSpeedButton = document.getElementById("decreaseSpeed");
+        const statsButton = document.getElementById("statsButton");
+        const changeColorButton = document.getElementById("changeColor");
+        const changeShapeButton = document.getElementById("changeShape"); // Reference to the shape change button
+        const statsDisplay = document.getElementById("stats");
+        const hitsPerMinuteDisplay = document.getElementById("hitsPerMinute");
+
+        const ballRadius = 25; // Radius (50px width / 2)
+        let dx = 10; // Change in x (horizontal)
+        let dy = 10; // Change in y (vertical)
+        let speedMultiplier = 1; // Multiplier for speed adjustment
+
+        let hitCount = 0; // Hits count
+        let lastHitTimestamp = Date.now(); // Last hit timestamp
+
+        const colors = ["#ff5733", "#33ff57", "#3357ff", "#ff33a1", "#33fff0", "#f0ff33", "#ff8333", "#ab33ff", "#ff33cc", "#33ff33"]; // Color array
+        let isSquare = false; // Flag to track the current shape (circle or square)
+
+        // Initialize ball position
+        ball.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
+        ball.style.top = `${Math.random() * (window.innerHeight - 50)}px`;
+
+        function updateBallPosition() {
+            // Get current position
+            const ballRect = ball.getBoundingClientRect();
+            let x = ballRect.x;
+            let y = ballRect.y;
+
+            // Check for collision with game area boundaries
+            if (x + ballRadius + (dx * speedMultiplier) > window.innerWidth || x - ballRadius + (dx * speedMultiplier) < 0) {
+                dx *= -1; // Reverse direction on x-axis
+                hitCount++;
+            }
+            if (y + ballRadius + (dy * speedMultiplier) > window.innerHeight || y - ballRadius + (dy * speedMultiplier) < 0) {
+                dy *= -1; // Reverse direction on y-axis
+                hitCount++;
+            }
+
+            // Update ball position
+            ball.style.left = (x + (dx * speedMultiplier)) + "px";
+            ball.style.top = (y + (dy * speedMultiplier)) + "px";
+
+            // Update hits per second every second
+            const now = Date.now();
+            if (now - lastHitTimestamp >= 1000) { // Every second
+                hitsPerMinuteDisplay.innerText = hitCount;
+                lastHitTimestamp = now;
+                hitCount = 0; // Reset hit count
+            }
+
+            // Continue the animation
+            requestAnimationFrame(updateBallPosition);
+        }
+
+        function increaseSpeed() {
+            speedMultiplier *= 1.2; // Increase speed by 20%
+            console.log("Speed increased: " + speedMultiplier);
+        }
+
+        function decreaseSpeed() {
+            speedMultiplier /= 1.2; // Decrease speed by 20%
+            if (speedMultiplier < 0.1) speedMultiplier = 0.1; // Prevent speed from being too low
+            console.log("Speed decreased: " + speedMultiplier);
+        }
+
+        function toggleStats() {
+            statsDisplay.style.visibility = statsDisplay.style.visibility === "hidden" ? "visible" : "hidden";
+        }
+
+        function changeColor() {
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            ball.style.backgroundColor = randomColor; // Change ball color
+            console.log("Ball color changed to: " + randomColor);
+        }
+
+        function changeShape() {
+            isSquare = !isSquare; // Toggle the shape flag
+            if (isSquare) {
+                ball.style.borderRadius = "0"; // Set to square
+                ball.style.width = "50px";
+                ball.style.height = "50px";
+            } else {
+                ball.style.borderRadius = "50%"; // Set back to circle
+                ball.style.width = "50px";
+                ball.style.height = "50px";
+            }
+            console.log("Ball shape changed to: " + (isSquare ? "Square" : "Circle"));
+        }
+
+        increaseSpeedButton.addEventListener("click", increaseSpeed);
+        decreaseSpeedButton.addEventListener("click", decreaseSpeed);
+        statsButton.addEventListener("click", toggleStats);
+        changeColorButton.addEventListener("click", changeColor);
+        changeShapeButton.addEventListener("click", changeShape); // Add event listener for shape change
+
+        // Start the animation
+        updateBallPosition();
+    </script>
+</body>
+</html>
