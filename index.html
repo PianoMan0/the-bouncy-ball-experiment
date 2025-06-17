@@ -32,7 +32,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            z-index: 10; /* Ensure controls are above the game area */
+            z-index: 10; /* Make sure that the buttons go at the top */
         }
 
         button {
@@ -49,7 +49,7 @@
             top: 60px;
             left: 10px;
             z-index: 10;
-            visibility: hidden; /* Hidden by default */
+            visibility: hidden;
             background-color: rgba(255, 255, 255, 0.9);
             border: 1px solid #ccc;
             padding: 10px;
@@ -69,6 +69,7 @@
         <div id="ball"></div>
     </div>
     <div id="stats">Hits Last Second: <span id="hitsPerMinute">0</span></div>
+    <p>Stats for Nerds: Total Distance: <span id="totalDistance">0</span> px</p>
     <script>
         const ball = document.getElementById("ball");
         const gameArea = document.getElementById("gameArea");
@@ -76,22 +77,23 @@
         const decreaseSpeedButton = document.getElementById("decreaseSpeed");
         const statsButton = document.getElementById("statsButton");
         const changeColorButton = document.getElementById("changeColor");
-        const changeShapeButton = document.getElementById("changeShape"); // Reference to the shape change button
+        const changeShapeButton = document.getElementById("changeShape");
         const statsDisplay = document.getElementById("stats");
         const hitsPerMinuteDisplay = document.getElementById("hitsPerMinute");
+        const totalDistanceDisplay = document.getElementById("totalDistance")
 
-        const ballRadius = 25; // Radius (50px width / 2)
+        const ballRadius = 25;
         let dx = 10; // Change in x (horizontal)
         let dy = 10; // Change in y (vertical)
-        let speedMultiplier = 1; // Multiplier for speed adjustment
+        let speedMultiplier = 1; // For speed adjustment
+        let totalDistance = 0;
 
-        let hitCount = 0; // Hits count
-        let lastHitTimestamp = Date.now(); // Last hit timestamp
+        let hitCount = 0;
+        let lastHitTimestamp = Date.now();
 
-        const colors = ["#ff5733", "#33ff57", "#3357ff", "#ff33a1", "#33fff0", "#f0ff33", "#ff8333", "#ab33ff", "#ff33cc", "#33ff33"]; // Color array
-        let isSquare = false; // Flag to track the current shape (circle or square)
+        const colors = ["#ff5733", "#33ff57", "#3357ff", "#ff33a1", "#33fff0", "#f0ff33", "#ff8333", "#ab33ff", "#ff33cc", "#33ff33"];
+        let isSquare = false;
 
-        // Initialize ball position
         ball.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
         ball.style.top = `${Math.random() * (window.innerHeight - 50)}px`;
 
@@ -101,29 +103,32 @@
             let x = ballRect.x;
             let y = ballRect.y;
 
-            // Check for collision with game area boundaries
+            // Check for collision with the wall
             if (x + ballRadius + (dx * speedMultiplier) > window.innerWidth || x - ballRadius + (dx * speedMultiplier) < 0) {
-                dx *= -1; // Reverse direction on x-axis
+                dx *= -1;
                 hitCount++;
             }
             if (y + ballRadius + (dy * speedMultiplier) > window.innerHeight || y - ballRadius + (dy * speedMultiplier) < 0) {
-                dy *= -1; // Reverse direction on y-axis
+                dy *= -1;
                 hitCount++;
             }
 
-            // Update ball position
+            const distanceMoved = Math.sqrt(Math.pow(dx * speedMultiplier, 2) + Math.pow(dy * speedMultiplier, 2)); // Pythagorean theorem
+            totalDistance += distanceMoved
+
             ball.style.left = (x + (dx * speedMultiplier)) + "px";
             ball.style.top = (y + (dy * speedMultiplier)) + "px";
 
-            // Update hits per second every second
+            // Update hits per second every second :3
             const now = Date.now();
-            if (now - lastHitTimestamp >= 1000) { // Every second
+            if (now - lastHitTimestamp >= 1000) {
                 hitsPerMinuteDisplay.innerText = hitCount;
                 lastHitTimestamp = now;
-                hitCount = 0; // Reset hit count
+                hitCount = 0;
             }
 
-            // Continue the animation
+            totalDistanceDisplay.innerText = totalDistance.toFixed(2);
+
             requestAnimationFrame(updateBallPosition);
         }
 
@@ -144,12 +149,12 @@
 
         function changeColor() {
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            ball.style.backgroundColor = randomColor; // Change ball color
+            ball.style.backgroundColor = randomColor;
             console.log("Ball color changed to: " + randomColor);
         }
 
         function changeShape() {
-            isSquare = !isSquare; // Toggle the shape flag
+            isSquare = !isSquare;
             if (isSquare) {
                 ball.style.borderRadius = "0"; // Set to square
                 ball.style.width = "50px";
@@ -166,7 +171,7 @@
         decreaseSpeedButton.addEventListener("click", decreaseSpeed);
         statsButton.addEventListener("click", toggleStats);
         changeColorButton.addEventListener("click", changeColor);
-        changeShapeButton.addEventListener("click", changeShape); // Add event listener for shape change
+        changeShapeButton.addEventListener("click", changeShape);
 
         // Start the animation
         updateBallPosition();
