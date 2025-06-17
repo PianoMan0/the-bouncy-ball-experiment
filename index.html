@@ -63,13 +63,16 @@
         <button id="decreaseSpeed">Decrease Speed</button>
         <button id="changeColor">Change Ball Color</button> 
         <button id="changeShape">Square Mode</button> 
-					<button id="statsButton">Stats for Nerds</button>
+		<button id="statsButton">Stats for Nerds</button>
     </div>
     <div id="gameArea">
         <div id="ball"></div>
     </div>
-    <div id="stats">Hits Last Second: <span id="hitsPerMinute">0</span></div>
-    <p>Stats for Nerds: Total Distance: <span id="totalDistance">0</span> px</p>
+    <div id="stats">
+        Hits Last Second: <span id="hitsPerMinute">0</span>
+        <p>Stats for Nerds: Total Distance: <span id="totalDistance">0</span> px</p>
+    </div>
+
     <script>
         const ball = document.getElementById("ball");
         const gameArea = document.getElementById("gameArea");
