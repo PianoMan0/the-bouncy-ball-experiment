@@ -32,7 +32,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            z-index: 10; /* Make sure that the buttons go at the top */
+            z-index: 10;
         }
 
         button {
@@ -63,121 +63,182 @@
         <button id="decreaseSpeed">Decrease Speed</button>
         <button id="changeColor">Change Ball Color</button> 
         <button id="changeShape">Square Mode</button> 
-		<button id="statsButton">Stats for Nerds</button>
+        <button id="statsButton">Stats for Nerds</button>
+        <button id="chaosModeButton">Chaos Mode</button>
     </div>
     <div id="gameArea">
-        <div id="ball"></div>
     </div>
     <div id="stats">
         <p>Hits Last Second: <span id="hitsPerMinute">0</span></p>
         <p>Total Distance: <span id="totalDistance">0</span> px</p>
     </div>
 
-    <script>
-        const ball = document.getElementById("ball");
-        const gameArea = document.getElementById("gameArea");
-        const increaseSpeedButton = document.getElementById("increaseSpeed");
-        const decreaseSpeedButton = document.getElementById("decreaseSpeed");
-        const statsButton = document.getElementById("statsButton");
-        const changeColorButton = document.getElementById("changeColor");
-        const changeShapeButton = document.getElementById("changeShape");
-        const statsDisplay = document.getElementById("stats");
-        const hitsPerMinuteDisplay = document.getElementById("hitsPerMinute");
-        const totalDistanceDisplay = document.getElementById("totalDistance")
+<script>
+    const gameArea = document.getElementById("gameArea");
+    const increaseSpeedButton = document.getElementById("increaseSpeed");
+    const decreaseSpeedButton = document.getElementById("decreaseSpeed");
+    const statsButton = document.getElementById("statsButton");
+    const changeColorButton = document.getElementById("changeColor");
+    const changeShapeButton = document.getElementById("changeShape");
+    const chaosModeButton = document.getElementById("chaosModeButton");
+    const statsDisplay = document.getElementById("stats");
+    const hitsPerMinuteDisplay = document.getElementById("hitsPerMinute");
+    const totalDistanceDisplay = document.getElementById("totalDistance");
 
-        const ballRadius = 25;
-        let dx = 10; // Change in x (horizontal)
-        let dy = 10; // Change in y (vertical)
-        let speedMultiplier = 1; // For speed adjustment
-        let totalDistance = 0;
+    const ballRadius = 25;
+    let speedMultiplier = 1;
+    let totalDistance = 0;
+    let hitCount = 0;
+    let lastHitTimestamp = Date.now();
 
-        let hitCount = 0;
-        let lastHitTimestamp = Date.now();
+    const colors = [
+        "#ff5733", "#33ff57", "#3357ff", "#ff33a1", "#33fff0",
+        "#f0ff33", "#ff8333", "#ab33ff", "#ff33cc", "#33ff33"
+    ];
+    let isSquare = false;
 
-        const colors = ["#ff5733", "#33ff57", "#3357ff", "#ff33a1", "#33fff0", "#f0ff33", "#ff8333", "#ab33ff", "#ff33cc", "#33ff33"];
-        let isSquare = false;
+    // Balls storage *skull*
+    const balls = [];
+    const ballStates = [];
 
+    // Ball factory
+    function createBall(color) {
+        const ball = document.createElement("div");
+        ball.className = "ball";
+        ball.style.position = "absolute";
+        ball.style.width = "50px";
+        ball.style.height = "50px";
+        ball.style.borderRadius = isSquare ? "0" : "50%";
+        ball.style.backgroundColor = color || colors[Math.floor(Math.random() * colors.length)];
+        ball.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
         ball.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
         ball.style.top = `${Math.random() * (window.innerHeight - 50)}px`;
+        gameArea.appendChild(ball);
+        return ball;
+    }
 
-        function updateBallPosition() {
-            // Get current position
-            const ballRect = ball.getBoundingClientRect();
-            let x = ballRect.x;
-            let y = ballRect.y;
+    function clearBalls() {
+        while (balls.length > 0) {
+            const ball = balls.pop();
+            gameArea.removeChild(ball);
+            ballStates.pop();
+        }
+    }
 
-            // Check for collision with the wall
-            if (x + ballRadius + (dx * speedMultiplier) > window.innerWidth || x - ballRadius + (dx * speedMultiplier) < 0) {
-                dx *= -1;
+    function setupSingleBall() {
+        clearBalls();
+        const ball = createBall();
+        balls.push(ball);
+        ballStates.push({
+            dx: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6),
+            dy: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6),
+        });
+    }
+
+    function setupChaosMode() {
+        clearBalls();
+        const chaosBallsCount = 10; // Number of balls in chaos mode
+        for (let i = 0; i < chaosBallsCount; i++) {
+            const ball = createBall();
+            balls.push(ball);
+            ballStates.push({
+                dx: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6),
+                dy: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6),
+            });
+        }
+    }
+
+    let chaosActive = false;
+    function toggleChaosMode() {
+        chaosActive = !chaosActive;
+        if (chaosActive) {
+            chaosModeButton.innerText = "Normal Mode";
+            setupChaosMode();
+        } else {
+            chaosModeButton.innerText = "Chaos Mode";
+            setupSingleBall();
+        }
+    }
+
+    function updateBallPositions() {
+        for (let i = 0; i < balls.length; i++) {
+            const ball = balls[i];
+            const state = ballStates[i];
+            let x = parseFloat(ball.style.left);
+            let y = parseFloat(ball.style.top);
+
+            // Wall collision
+            if (x + ballRadius * 2 + (state.dx * speedMultiplier) > window.innerWidth || x + (state.dx * speedMultiplier) < 0) {
+                state.dx *= -1;
                 hitCount++;
             }
-            if (y + ballRadius + (dy * speedMultiplier) > window.innerHeight || y - ballRadius + (dy * speedMultiplier) < 0) {
-                dy *= -1;
+            if (y + ballRadius * 2 + (state.dy * speedMultiplier) > window.innerHeight || y + (state.dy * speedMultiplier) < 0) {
+                state.dy *= -1;
                 hitCount++;
             }
 
-            const distanceMoved = Math.sqrt(Math.pow(dx * speedMultiplier, 2) + Math.pow(dy * speedMultiplier, 2)); // Pythagorean theorem
-            totalDistance += distanceMoved
+            const distanceMoved = Math.sqrt(
+                Math.pow(state.dx * speedMultiplier, 2) +
+                Math.pow(state.dy * speedMultiplier, 2)
+            );
+            totalDistance += distanceMoved;
 
-            ball.style.left = (x + (dx * speedMultiplier)) + "px";
-            ball.style.top = (y + (dy * speedMultiplier)) + "px";
-
-            // Update hits per second every second :3
-            const now = Date.now();
-            if (now - lastHitTimestamp >= 1000) {
-                hitsPerMinuteDisplay.innerText = hitCount;
-                lastHitTimestamp = now;
-                hitCount = 0;
-            }
-
-            totalDistanceDisplay.innerText = totalDistance.toFixed(2);
-
-            requestAnimationFrame(updateBallPosition);
+            ball.style.left = (x + (state.dx * speedMultiplier)) + "px";
+            ball.style.top = (y + (state.dy * speedMultiplier)) + "px";
         }
 
-        function increaseSpeed() {
-            speedMultiplier *= 1.2; // Increase speed by 20%
-            console.log("Speed increased: " + speedMultiplier);
+        // Update stats
+        const now = Date.now();
+        if (now - lastHitTimestamp >= 1000) {
+            hitsPerMinuteDisplay.innerText = hitCount;
+            lastHitTimestamp = now;
+            hitCount = 0;
         }
+        totalDistanceDisplay.innerText = totalDistance.toFixed(2);
 
-        function decreaseSpeed() {
-            speedMultiplier /= 1.2; // Decrease speed by 20%
-            if (speedMultiplier < 0.1) speedMultiplier = 0.1; // Prevent speed from being too low
-            console.log("Speed decreased: " + speedMultiplier);
-        }
+        requestAnimationFrame(updateBallPositions);
+    }
 
-        function toggleStats() {
-            statsDisplay.style.visibility = statsDisplay.style.visibility === "hidden" ? "visible" : "hidden";
-        }
+    function increaseSpeed() {
+        speedMultiplier *= 1.2;
+    }
 
-        function changeColor() {
+    function decreaseSpeed() {
+        speedMultiplier /= 1.2;
+        if (speedMultiplier < 0.1) speedMultiplier = 0.1;
+    }
+
+    function toggleStats() {
+        statsDisplay.style.visibility = statsDisplay.style.visibility === "hidden" ? "visible" : "hidden";
+    }
+
+    function changeColor() {
+        for (const ball of balls) {
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             ball.style.backgroundColor = randomColor;
-            console.log("Ball color changed to: " + randomColor);
         }
+    }
 
-        function changeShape() {
-            isSquare = !isSquare;
-            if (isSquare) {
-                ball.style.borderRadius = "0"; // Set to square
-                ball.style.width = "50px";
-                ball.style.height = "50px";
-            } else {
-                ball.style.borderRadius = "50%"; // Set back to circle
-                ball.style.width = "50px";
-                ball.style.height = "50px";
-            }
-            console.log("Ball shape changed to: " + (isSquare ? "Square" : "Circle"));
+    function changeShape() {
+        isSquare = !isSquare;
+        for (const ball of balls) {
+            ball.style.borderRadius = isSquare ? "0" : "50%";
+            ball.style.width = "50px";
+            ball.style.height = "50px";
         }
+        changeShapeButton.innerText = isSquare ? "Circle Mode" : "Square Mode";
+    }
 
-        increaseSpeedButton.addEventListener("click", increaseSpeed);
-        decreaseSpeedButton.addEventListener("click", decreaseSpeed);
-        statsButton.addEventListener("click", toggleStats);
-        changeColorButton.addEventListener("click", changeColor);
-        changeShapeButton.addEventListener("click", changeShape);
+    increaseSpeedButton.addEventListener("click", increaseSpeed);
+    decreaseSpeedButton.addEventListener("click", decreaseSpeed);
+    statsButton.addEventListener("click", toggleStats);
+    changeColorButton.addEventListener("click", changeColor);
+    changeShapeButton.addEventListener("click", changeShape);
+    chaosModeButton.addEventListener("click", toggleChaosMode);
 
-        // Start the animation
-        updateBallPosition();
-    </script>
+    // Start with a single ball
+    setupSingleBall();
+    updateBallPositions();
+</script>
 </body>
 </html>
